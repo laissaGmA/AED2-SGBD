@@ -42,14 +42,12 @@ int main() {
                  printf("Registro removido com sucesso.\n");
                 }
                 break;
-          case 4:
+            case 4:
                 {
                     int chave;
-                    printf("Digite a chave do registro a ser buscado: ");
+                    printf("Digite a matricula do registro a ser buscado: ");
                     scanf("%d", &chave);
-                    buscar(chave, tab.bst_indices, &tab);
                     buscarAVL(chave, tab.avl_indices, &tab);
-                    buscarRB(chave, tab.rb_indices, &tab);
                 }
                 break;
             case 5:
@@ -63,11 +61,11 @@ int main() {
                 printf("Dados salvos em arquivo.\n");
                 break;
             case 7:
-                tab.bst_indices = carregar_arquivo("bst_indices.dat", tab.bst_indices);
-                tab.avl_indices = carregar_arquivoAVL("avl_indices.dat", tab.avl_indices);
-                tab.rb_indices = carregar_arquivoRB("rb_indices.dat", tab.rb_indices);
-                printf("Dados carregados do arquivo.\n");
-                break;
+                 tab.bst_indices = carregar_arquivo("bst_indices.dat", tab.bst_indices, &tab);
+                 tab.avl_indices = carregar_arquivoAVL("avl_indices.dat", tab.avl_indices, &tab);
+                 tab.rb_indices = carregar_arquivoRB("rb_indices.dat", tab.rb_indices, &tab);
+                 printf("Dados carregados do arquivo.\n");
+                 break;
             case 99:
                 printf("Finalizando o Programa...\n");
                 finalizar(&tab);

@@ -39,25 +39,14 @@ tipo_dado *maior_elementoRB(arvore_rb raiz) {
     return raiz->dado;
 }
 
-void adicionarRegistroRB(tabela *tab, dado *registro) {
-    if (tab->arquivo_dados != NULL) {
-        tipo_dado *novo = (tipo_dado *)malloc(sizeof(tipo_dado));
-
-        novo->chave = registro->matricula;
-
-        fseek(tab->arquivo_dados, 0L, SEEK_END);
-        novo->indice = ftell(tab->arquivo_dados);
-
-        fwrite(registro, sizeof(dado), 1, tab->arquivo_dados);
-        tab->rb_indices = adicionarRB(novo, tab->rb_indices);
-        // Não é necessário balancear explicitamente em uma árvore rubro-negra após a inserção
-    }
-}
-
-arvore_rb adicionarRB(tipo_dado *valor, arvore_rb raiz) {
+arvore_rb adicionarRB(tipo_dado *valor, arvore_rb raiz, tabela *tab) {
     if (raiz == NULL) {
         no_rb *novo = (no_rb *)malloc(sizeof(no_rb));
-        novo->dado = valor;
+
+        // Aloca uma nova cópia de valor
+        tipo_dado *novo_dado = copiar_dados(valor);
+
+        novo->dado = novo_dado;
         novo->cor = RED;  // Novos nós são inicializados como vermelhos
         novo->esq = NULL;
         novo->dir = NULL;
@@ -67,12 +56,21 @@ arvore_rb adicionarRB(tipo_dado *valor, arvore_rb raiz) {
     }
 
     if (valor->chave > raiz->dado->chave) {
-        raiz->dir = adicionarRB(valor, raiz->dir);
+        raiz->dir = adicionarRB(valor, raiz->dir, tab);
         raiz->dir->pai = raiz;
     } else {
-        raiz->esq = adicionarRB(valor, raiz->esq);
+        raiz->esq = adicionarRB(valor, raiz->esq, tab);
         raiz->esq->pai = raiz;
     }
+
+    // Move o ponteiro de arquivo ao final
+    fseek(tab->arquivo_dados, 0L, SEEK_END);
+
+    // Atualiza o índice do novo nó
+    valor->indice = ftell(tab->arquivo_dados);
+
+    // Escreve o registro no arquivo
+    fwrite(valor, sizeof(tipo_dado), 1, tab->arquivo_dados);
 
     // Balanceamento na inserção ocorre no final da função
     return balancearInsercaoRB(raiz, raiz->dir);
@@ -206,7 +204,7 @@ void imprimir_elementoRB(arvore_rb raiz, tabela *tab) {
     fseek(tab->arquivo_dados, raiz->dado->indice, SEEK_SET);
     int r = fread(temp, sizeof(dado), 1, tab->arquivo_dados);
 
-    printf("[%d, %s, %s]\n", raiz->dado->chave, temp->nome, temp->curso);
+    printf("[%d, %d, %s, %s, %d]\n", raiz->dado->chave, r, temp->nome, temp->curso, temp->periodo);
     free(temp);
 }
 
@@ -296,13 +294,16 @@ arvore_rb balancearAposRemocao(arvore_rb raiz, arvore_rb pai, int lado) {
 
 
 // Função para salvar a árvore rubro-negra em um arquivo
-void salvar_arquivoRB(char *nome, arvore_rb raiz) {
-    FILE *arq;
-    arq = fopen(nome, "wb");
-    if (arq != NULL) {
-        salvar_auxiliarRB(raiz, arq);
-        fclose(arq);
+void salvar_arquivoRB(char *nome, arvore_rb a) {
+    FILE *arq = fopen(nome, "wb");
+    if (arq == NULL) {
+        printf("Erro ao abrir o arquivo %s para escrita.\n", nome);
+        return;
     }
+
+    salvar_auxiliarRB(a, arq);
+
+    fclose(arq);  // Adiciona esta linha para fechar o arquivo corretamente
 }
 
 // Função auxiliar para salvar a árvore rubro-negra em um arquivo
@@ -315,7 +316,7 @@ void salvar_auxiliarRB(arvore_rb raiz, FILE *arq) {
 }
 
 // Função para carregar a árvore rubro-negra de um arquivo
-arvore_rb carregar_arquivoRB(char *nome, arvore_rb raiz) {
+arvore_rb carregar_arquivoRB(char *nome, arvore_rb raiz, tabela *tab) {
     FILE *arq;
     arq = fopen(nome, "rb");
     tipo_dado *temp;
@@ -323,7 +324,7 @@ arvore_rb carregar_arquivoRB(char *nome, arvore_rb raiz) {
         temp = (tipo_dado *)malloc(sizeof(tipo_dado));
         while (fread(temp, sizeof(tipo_dado), 1, arq)) {
 
-            raiz = adicionarRB(temp, raiz);
+            raiz = adicionarRB(temp, raiz, tab);
             raiz = balancearInsercaoRB(raiz, raiz->dir);  // Aplicar balanceamento após a carga
             temp = (tipo_dado *)malloc(sizeof(tipo_dado));
         }
@@ -331,4 +332,3 @@ arvore_rb carregar_arquivoRB(char *nome, arvore_rb raiz) {
     }
     return raiz;
 }
-

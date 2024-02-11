@@ -15,9 +15,9 @@ int inicializarTabela(tabela *tab) {
     inicializarRB(&tab->rb_indices);
 
     tab->arquivo_dados = fopen("dados.dat", "a+b");
-    tab->bst_indices = carregar_arquivo("bst_indices.dat", tab->bst_indices);
-    tab->avl_indices = carregar_arquivoAVL("avl_indices.dat", tab->avl_indices);
-    tab->rb_indices = carregar_arquivoRB("rb_indices.dat", tab->rb_indices);
+    carregar_arquivo("bst_indices.dat", tab->bst_indices, tab);
+	carregar_arquivoAVL("avl_indices.dat", tab->avl_indices, tab);
+	carregar_arquivoRB("rb_indices.dat", tab->rb_indices, tab);
 
     if (tab->arquivo_dados != NULL)
         return 1;
@@ -34,28 +34,52 @@ void adicionarRegistro(tabela *tab, dado *registro) {
         novo->indice = ftell(tab->arquivo_dados);
 
         fwrite(registro, sizeof(dado), 1, tab->arquivo_dados);
-        
-        tab->bst_indices = adicionar(novo, tab->bst_indices);
-        tab->avl_indices = adicionarAVL(novo, tab->avl_indices);
-       tab->rb_indices = adicionarRB(novo, tab->rb_indices);
+
+        // Adiciona nas árvores
+        tab->bst_indices = adicionar(novo, tab->bst_indices, tab);
+        tab->avl_indices = adicionarAVL(novo, tab->avl_indices, tab);
+        tab->rb_indices = adicionarRB(novo, tab->rb_indices, tab);
+
+        fseek(tab->arquivo_dados, 0L, SEEK_END);  // Move o ponteiro de arquivo de volta ao final
     }
 }
 
-arvore adicionar (tipo_dado *valor, arvore raiz) {
-	if(raiz == NULL) {
-		arvore novo = (arvore) malloc(sizeof(struct no_bst));
-		novo->dado = valor;
-		novo->esq = NULL;
-		novo->dir = NULL;
-		return novo;
-	}
+tipo_dado *copiar_dados(tipo_dado *registro) {
+    tipo_dado *copia = (tipo_dado *)malloc(sizeof(tipo_dado));
+    if (copia != NULL) {
+        copia->chave = registro->chave;
+        copia->indice = registro->indice;
+    }
+    return copia;
+}
 
-	if(valor->chave > raiz->dado->chave) {
-		raiz->dir = adicionar(valor, raiz->dir);
-	} else {
-		raiz->esq = adicionar(valor, raiz->esq);
-	}
-	return raiz;
+// Função adicionar modificada
+arvore adicionar(tipo_dado *valor, arvore raiz, tabela *tab) {
+    if (raiz == NULL) {
+        arvore novo = (arvore)malloc(sizeof(struct no_bst));
+        novo->dado = copiar_dados(valor);
+        novo->esq = NULL;
+        novo->dir = NULL;
+        return novo;
+    }
+
+    if (valor->chave > raiz->dado->chave) {
+        raiz->dir = adicionar(valor, raiz->dir, tab);
+    } else {
+        raiz->esq = adicionar(valor, raiz->esq, tab);
+    }
+
+    // Move o ponteiro de arquivo ao final
+    fseek(tab->arquivo_dados, 0L, SEEK_END);
+
+    // Atualiza o índice do novo nó
+    valor->indice = ftell(tab->arquivo_dados);
+
+    // Escreve o registro no arquivo
+    fwrite(valor, sizeof(tipo_dado), 1, tab->arquivo_dados);
+
+    // Retorna a raiz atualizada
+    return raiz;
 }
 
 int altura(arvore raiz) {
@@ -138,7 +162,7 @@ void imprimir_elemento(arvore raiz, tabela *tab) {
     fseek(tab->arquivo_dados, raiz->dado->indice, SEEK_SET);
     int r = fread(temp, sizeof(dado), 1, tab->arquivo_dados);
 
-    printf("[%d, %s, %s, %d]\n", raiz->dado->chave, temp->nome, temp->curso, temp->periodo);
+    printf("[%d, %d, %s, %s, %d]\n", raiz->dado->chave, r, temp->nome, temp->curso, temp->periodo);
     free(temp);
 }
 
@@ -166,21 +190,22 @@ arvore remover (int valor, arvore raiz) {
 	return raiz;
 }
 
-dado * ler_dados() {
-	dado *novo = (dado *) malloc(sizeof(dado));
-	//__fpurge(stdin);
-	getchar();
-	printf("Nome: ");
-	fgets(novo->nome, 80,  stdin);
-	tirar_enter(novo->nome);
-	printf("Curso: ");
-	fgets(novo->curso, 50,  stdin);
-	tirar_enter(novo->curso);
-	printf("Periodo: ");
-	scanf("%d", &novo->periodo);
-	printf("Matricula: ");
-	scanf("%d", &novo->matricula);
-	return novo;
+dado* ler_dados() {
+    dado* registro = (dado*)malloc(sizeof(dado));
+
+    printf("Nome: ");
+    scanf("%s", registro->nome);
+
+    printf("Curso: ");
+    scanf("%s", registro->curso);
+
+    printf("Periodo: ");
+    scanf("%d", &registro->periodo);
+
+    printf("Matricula: ");
+    scanf("%d", &registro->matricula);
+
+    return registro;
 }
 
 void tirar_enter(char *string) {
@@ -188,21 +213,23 @@ void tirar_enter(char *string) {
 }
 
 void salvar_arquivo(char *nome, arvore a) {
-	FILE *arq;
-	arq = fopen(nome, "wb");
-	if(arq != NULL) {
-		salvar_auxiliar(a, arq);
-		fclose(arq);
-	}
+    FILE *arq = fopen(nome, "wb");
+    if (arq == NULL) {
+        printf("Erro ao abrir o arquivo %s para escrita.\n", nome);
+        return;
+    }
+
+    salvar_auxiliar(a, arq);
+
+    fclose(arq);  // Adiciona esta linha para fechar o arquivo corretamente
 }
 
-void salvar_auxiliar(arvore raiz, FILE *arq){
-	if(raiz != NULL) {
-		fwrite(raiz->dado, sizeof(tipo_dado), 1, arq);
-		salvar_auxiliar(raiz->esq, arq);
-		salvar_auxiliar(raiz->dir, arq);
-	}
-
+void salvar_auxiliar(arvore raiz, FILE *arq) {
+    if (raiz != NULL) {
+        fwrite(raiz->dado, sizeof(tipo_dado), 1, arq);
+        salvar_auxiliar(raiz->esq, arq);
+        salvar_auxiliar(raiz->dir, arq);
+    }
 }
 
 
@@ -219,7 +246,7 @@ void finalizar(tabela *tab) {
     printf("Dados salvos em arquivo.\n");
 }
 
-arvore carregar_arquivo(char *nome, arvore a) {
+arvore carregar_arquivo(char *nome, arvore a, tabela *tab) {
 	FILE *arq;
 	arq = fopen(nome, "rb");
 	tipo_dado * temp;
@@ -227,7 +254,7 @@ arvore carregar_arquivo(char *nome, arvore a) {
 		temp = (tipo_dado *) malloc(sizeof(tipo_dado));
 		while(fread(temp, sizeof(tipo_dado), 1, arq)) {
 			
-			a = adicionar(temp, a);			
+			a = adicionar(temp, a, tab);	
 			temp = (tipo_dado *) malloc(sizeof(tipo_dado));
 
 		}

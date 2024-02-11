@@ -59,7 +59,7 @@ int inicializarTabela(tabela *tab);
 void finalizar(tabela *tab);
 void adicionarRegistro(tabela *tab, dado *registro);
 void inicializar(arvore *raiz);
-arvore adicionar(tipo_dado *valor, arvore raiz);
+arvore adicionar(tipo_dado *valor, arvore raiz, tabela *tab);
 int altura(arvore raiz);
 int maior(int a, int b);
 tipo_dado *maior_elemento(arvore raiz);
@@ -74,15 +74,15 @@ dado *ler_dados();
 void tirar_enter(char *string);
 void salvar_arquivo(char *nome, arvore a);
 void salvar_auxiliar(arvore raiz, FILE *arq);
-arvore carregar_arquivo(char *nome, arvore a);
+arvore carregar_arquivo(char *nome, arvore a, tabela *tab);
+tipo_dado *copiar_dados(tipo_dado *registro);
 
 // Definições para Árvore AVL
 
 int inicializarTabelaAVL(tabela *tab);
 void finalizarAVL(tabela *tab);
-void adicionarRegistroAVL(tabela *tab, dado *registro);
+arvore_avl adicionarAVL(tipo_dado *valor, arvore_avl raiz, tabela *tab);
 void inicializarAVL(arvore_avl *raiz);
-arvore_avl adicionarAVL(tipo_dado *valor, arvore_avl raiz);
 int alturaAVL(no_avl *no);
 arvore_avl balancearAVL(arvore_avl raiz);
 int fator_balanceamentoAVL(no_avl *no);
@@ -98,7 +98,7 @@ dado *ler_dadosAVL();
 void tirar_enterAVL(char *string);
 void salvar_arquivoAVL(char *nome, arvore_avl a);
 void salvar_auxiliarAVL(arvore_avl raiz, FILE *arq);
-arvore_avl carregar_arquivoAVL(char *nome, arvore_avl a);
+arvore_avl carregar_arquivoAVL(char *nome, arvore_avl a, tabela *tab);
 arvore_avl rotacao_direitaAVL(arvore_avl y);
 arvore_avl rotacao_esquerdaAVL(arvore_avl x);
 arvore_avl rotacao_direita_esquerdaAVL(arvore_avl z);
@@ -108,9 +108,8 @@ arvore_avl rotacao_esquerda_direitaAVL(arvore_avl z);
 
 int inicializarTabelaRB(tabela *tab);
 void finalizarRB(tabela *tab);
-void adicionarRegistroRB(tabela *tab, dado *registro);
 void inicializarRB(arvore_rb *raiz);
-arvore_rb adicionarRB(tipo_dado *valor, arvore_rb raiz);
+arvore_rb adicionarRB(tipo_dado *valor, arvore_rb raiz, tabela *tab);
 arvore_rb balancearInsercaoRB(arvore_rb raiz, no_rb *novo);
 arvore_rb encontrarMenorRB(arvore_rb raiz);
 int alturaRB(no_rb *no);
@@ -125,7 +124,7 @@ void balancearRemocaoRB(arvore_rb *raiz, no_rb *x, no_rb *pai_x);
 void tirar_enterRB(char *string);
 void salvar_arquivoRB(char *nome, arvore_rb a);
 void salvar_auxiliarRB(arvore_rb raiz, FILE *arq);
-arvore_rb carregar_arquivoRB(char *nome, arvore_rb a);
+arvore_rb carregar_arquivoRB(char *nome, arvore_rb raiz, tabela *tab);
 arvore_rb rotacaoDireitaRB(arvore_rb raiz, no_rb *x);
 arvore_rb rotacaoEsquerdaRB(arvore_rb raiz, no_rb *y);
 
