@@ -4,20 +4,20 @@
 #include <string.h>
 
 
+
 void inicializar(arvore *raiz) {
-	*raiz = NULL;
+    *raiz = NULL;
 }
 
-
 int inicializarTabela(tabela *tab) {
-    inicializar(&tab->bst_indices);
-    inicializarAVL(&tab->avl_indices);
+    inicializar(&tab->bst_indices);    
+    inicializarAVL(&tab->avl_indices);    
     inicializarRB(&tab->rb_indices);
 
     tab->arquivo_dados = fopen("dados.dat", "a+b");
-    carregar_arquivo("bst_indices.dat", tab->bst_indices, tab);
-	carregar_arquivoAVL("avl_indices.dat", tab->avl_indices, tab);
-	carregar_arquivoRB("rb_indices.dat", tab->rb_indices, tab);
+    tab->bst_indices = carregar_arquivo("indices_bst.dat", tab->bst_indices, tab);
+    tab->avl_indices = carregar_arquivoAVL("indices_avl.dat", tab->avl_indices, tab);
+    tab->rb_indices = carregar_arquivoRB("indices_rb.dat", tab->rb_indices, tab);
 
     if (tab->arquivo_dados != NULL)
         return 1;
@@ -26,29 +26,29 @@ int inicializarTabela(tabela *tab) {
 }
 
 void adicionarRegistro(tabela *tab, dado *registro) {
-    if (tab->arquivo_dados != NULL) {
-        tipo_dado *novo = (tipo_dado *)malloc(sizeof(tipo_dado));
-        novo->chave = registro->matricula;
+    if(tab->arquivo_dados != NULL) {
+			tipo_dado * novo = (tipo_dado *) malloc(sizeof(tipo_dado));
 
-        fseek(tab->arquivo_dados, 0L, SEEK_END);
-        novo->indice = ftell(tab->arquivo_dados);
+			novo->chave = registro->matricula;
 
-        fwrite(registro, sizeof(dado), 1, tab->arquivo_dados);
+			fseek(tab->arquivo_dados, 0L, SEEK_END);
+			novo->indice = ftell(tab->arquivo_dados);
 
-        // Adiciona nas árvores
-        tab->bst_indices = adicionar(novo, tab->bst_indices, tab);
-        tab->avl_indices = adicionarAVL(novo, tab->avl_indices, tab);
-        tab->rb_indices = adicionarRB(novo, tab->rb_indices, tab);
+			fwrite(registro, sizeof(dado), 1, tab->arquivo_dados);
+			tab->bst_indices = adicionar(novo, tab->bst_indices, tab);
+            tab->avl_indices = adicionarAVL(novo, tab->avl_indices, tab);
+            tab->rb_indices = adicionarRB(novo, tab->rb_indices, tab);
+	}
 
-        fseek(tab->arquivo_dados, 0L, SEEK_END);  // Move o ponteiro de arquivo de volta ao final
-    }
 }
+
 
 tipo_dado *copiar_dados(tipo_dado *registro) {
     tipo_dado *copia = (tipo_dado *)malloc(sizeof(tipo_dado));
     if (copia != NULL) {
+        // Certifique-se de que os campos da struct sejam copiados corretamente
         copia->chave = registro->chave;
-        copia->indice = registro->indice;
+        // Outros campos se houver
     }
     return copia;
 }
@@ -190,22 +190,21 @@ arvore remover (int valor, arvore raiz) {
 	return raiz;
 }
 
-dado* ler_dados() {
-    dado* registro = (dado*)malloc(sizeof(dado));
-
-    printf("Nome: ");
-    scanf("%s", registro->nome);
-
-    printf("Curso: ");
-    scanf("%s", registro->curso);
-
-    printf("Periodo: ");
-    scanf("%d", &registro->periodo);
-
-    printf("Matricula: ");
-    scanf("%d", &registro->matricula);
-
-    return registro;
+dado * ler_dados() {
+	dado *novo = (dado *) malloc(sizeof(dado));
+	//__fpurge(stdin);
+	getchar();
+	printf("Nome: ");
+	fgets(novo->nome, 80,  stdin);
+	tirar_enter(novo->nome);
+	printf("Curso: ");
+	fgets(novo->curso, 50,  stdin);
+	tirar_enter(novo->curso);
+	printf("Periodo: ");
+	scanf("%d", &novo->periodo);
+	printf("Matricula: ");
+	scanf("%d", &novo->matricula);
+	return novo;
 }
 
 void tirar_enter(char *string) {
