@@ -1,32 +1,39 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "merged.h"
+#include "geral.h"
 #include <string.h>
 
 
-
 void inicializar(arvore *raiz) {
-    *raiz = NULL;
+	*raiz = NULL;
 }
 
 int inicializarTabela(tabela *tab) {
-    inicializar(&tab->bst_indices);    
-    inicializarAVL(&tab->avl_indices);    
-    inicializarRB(&tab->rb_indices);
+	inicializar(&tab->bst_indices);	
+	inicializarAVL(&tab->avl_indices);
+	inicializarRB(&tab->rb_indices);
 
-    tab->arquivo_dados = fopen("dados.dat", "a+b");
-    tab->bst_indices = carregar_arquivo("indices_bst.dat", tab->bst_indices, tab);
-    tab->avl_indices = carregar_arquivoAVL("indices_avl.dat", tab->avl_indices, tab);
-    tab->rb_indices = carregar_arquivoRB("indices_rb.dat", tab->rb_indices, tab);
+	tab->arquivo_dados = fopen("dados.dat", "a+b");
 
-    if (tab->arquivo_dados != NULL)
-        return 1;
-    else
-        return 0;
+	if(tab->arquivo_dados != NULL){
+		tab->bst_indices = carregar_arquivo("indices_bst.dat", tab->bst_indices);
+	    tab->avl_indices = carregar_arquivoAVL("indices_avl.dat", tab->avl_indices);
+		tab->rb_indices= carregar_arquivoRB("indices_rb.dat", tab->rb_indices);
+		return 1;
+	} else {
+		return 0;
+    }
 }
 
-void adicionarRegistro(tabela *tab, dado *registro) {
-    if(tab->arquivo_dados != NULL) {
+void finalizar (tabela *tab) {
+	fclose(tab->arquivo_dados);
+	salvar_arquivo("indices_bst.dat", tab->bst_indices);
+	salvar_arquivoAVL("indices_avl.dat", tab->avl_indices);
+	salvar_arquivoRB("indices_rb.dat", tab->rb_indices);
+}
+
+void adicionarRegistro(tabela *tab, dado *registro){
+	if(tab->arquivo_dados != NULL) {
 			tipo_dado * novo = (tipo_dado *) malloc(sizeof(tipo_dado));
 
 			novo->chave = registro->matricula;
@@ -35,51 +42,29 @@ void adicionarRegistro(tabela *tab, dado *registro) {
 			novo->indice = ftell(tab->arquivo_dados);
 
 			fwrite(registro, sizeof(dado), 1, tab->arquivo_dados);
-			tab->bst_indices = adicionar(novo, tab->bst_indices, tab);
-            tab->avl_indices = adicionarAVL(novo, tab->avl_indices, tab);
-            tab->rb_indices = adicionarRB(novo, tab->rb_indices, tab);
+			tab->bst_indices = adicionar(novo, tab->bst_indices);
+			tab->avl_indices = adicionarAVL(novo, tab->avl_indices);
+            tab->avl_indices = balancearAVL(tab->avl_indices);
+			adicionarRB(novo, &tab->rb_indices);
+            balancearInsercaoRB(&tab->rb_indices, tab->rb_indices);
+	}
+}
+
+arvore adicionar (tipo_dado *valor, arvore raiz) {
+	if(raiz == NULL) {
+		arvore novo = (arvore) malloc(sizeof(struct no_bst));
+		novo->dado = valor;
+		novo->esq = NULL;
+		novo->dir = NULL;
+		return novo;
 	}
 
-}
-
-
-tipo_dado *copiar_dados(tipo_dado *registro) {
-    tipo_dado *copia = (tipo_dado *)malloc(sizeof(tipo_dado));
-    if (copia != NULL) {
-        // Certifique-se de que os campos da struct sejam copiados corretamente
-        copia->chave = registro->chave;
-        // Outros campos se houver
-    }
-    return copia;
-}
-
-// Função adicionar modificada
-arvore adicionar(tipo_dado *valor, arvore raiz, tabela *tab) {
-    if (raiz == NULL) {
-        arvore novo = (arvore)malloc(sizeof(struct no_bst));
-        novo->dado = copiar_dados(valor);
-        novo->esq = NULL;
-        novo->dir = NULL;
-        return novo;
-    }
-
-    if (valor->chave > raiz->dado->chave) {
-        raiz->dir = adicionar(valor, raiz->dir, tab);
-    } else {
-        raiz->esq = adicionar(valor, raiz->esq, tab);
-    }
-
-    // Move o ponteiro de arquivo ao final
-    fseek(tab->arquivo_dados, 0L, SEEK_END);
-
-    // Atualiza o índice do novo nó
-    valor->indice = ftell(tab->arquivo_dados);
-
-    // Escreve o registro no arquivo
-    fwrite(valor, sizeof(tipo_dado), 1, tab->arquivo_dados);
-
-    // Retorna a raiz atualizada
-    return raiz;
+	if(valor->chave > raiz->dado->chave) {
+		raiz->dir = adicionar(valor, raiz->dir);
+	} else {
+		raiz->esq = adicionar(valor, raiz->esq);
+	}
+	return raiz;
 }
 
 int altura(arvore raiz) {
@@ -162,10 +147,9 @@ void imprimir_elemento(arvore raiz, tabela *tab) {
     fseek(tab->arquivo_dados, raiz->dado->indice, SEEK_SET);
     int r = fread(temp, sizeof(dado), 1, tab->arquivo_dados);
 
-    printf("[%d, %d, %s, %s, %d]\n", raiz->dado->chave, r, temp->nome, temp->curso, temp->periodo);
+    printf("[%d, %s, %s]\n", raiz->dado->chave, temp->nome, temp->curso);
     free(temp);
 }
-
 
 arvore remover (int valor, arvore raiz) {
 	if(raiz == NULL) 
@@ -212,40 +196,24 @@ void tirar_enter(char *string) {
 }
 
 void salvar_arquivo(char *nome, arvore a) {
-    FILE *arq = fopen(nome, "wb");
-    if (arq == NULL) {
-        printf("Erro ao abrir o arquivo %s para escrita.\n", nome);
-        return;
-    }
-
-    salvar_auxiliar(a, arq);
-
-    fclose(arq);  // Adiciona esta linha para fechar o arquivo corretamente
+	FILE *arq;
+	arq = fopen(nome, "wb");
+	if(arq != NULL) {
+		salvar_auxiliar(a, arq);
+		fclose(arq);
+	}
 }
 
-void salvar_auxiliar(arvore raiz, FILE *arq) {
-    if (raiz != NULL) {
-        fwrite(raiz->dado, sizeof(tipo_dado), 1, arq);
-        salvar_auxiliar(raiz->esq, arq);
-        salvar_auxiliar(raiz->dir, arq);
-    }
+void salvar_auxiliar(arvore raiz, FILE *arq){
+	if(raiz != NULL) {
+		fwrite(raiz->dado, sizeof(tipo_dado), 1, arq);
+		salvar_auxiliar(raiz->esq, arq);
+		salvar_auxiliar(raiz->dir, arq);
+	}
+
 }
 
-
-void finalizar(tabela *tab) {
-    if (tab->arquivo_dados != NULL) {
-        fclose(tab->arquivo_dados);
-    }
-
-    // Salva os índices antes de encerrar
-    salvar_arquivo("bst_indices.dat", tab->bst_indices);
-    salvar_arquivoAVL("avl_indices.dat", tab->avl_indices);
-    salvar_arquivoRB("rb_indices.dat", tab->rb_indices);
-    
-    printf("Dados salvos em arquivo.\n");
-}
-
-arvore carregar_arquivo(char *nome, arvore a, tabela *tab) {
+arvore carregar_arquivo(char *nome, arvore a) {
 	FILE *arq;
 	arq = fopen(nome, "rb");
 	tipo_dado * temp;
@@ -253,7 +221,7 @@ arvore carregar_arquivo(char *nome, arvore a, tabela *tab) {
 		temp = (tipo_dado *) malloc(sizeof(tipo_dado));
 		while(fread(temp, sizeof(tipo_dado), 1, arq)) {
 			
-			a = adicionar(temp, a, tab);	
+			a = adicionar(temp, a);			
 			temp = (tipo_dado *) malloc(sizeof(tipo_dado));
 
 		}

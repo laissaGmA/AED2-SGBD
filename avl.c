@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "merged.h"
+#include "geral.h"
 #include <string.h>
 
 void inicializarAVL(arvore_avl *raiz) {
     *raiz = NULL;
 }
-
 
 arvore_avl balancearAVL(arvore_avl raiz) {
     if (raiz == NULL) {
@@ -44,10 +43,12 @@ tipo_dado *maior_elementoAVL(arvore_avl raiz) {
     return raiz->dado;
 }
 
-arvore_avl adicionarAVL(tipo_dado *valor, arvore_avl raiz, tabela *tab) {
+
+
+arvore_avl adicionarAVL(tipo_dado *valor, arvore_avl raiz) {
     if (raiz == NULL) {
         arvore_avl novo = (arvore_avl)malloc(sizeof(struct no_avl));
-        novo->dado = copiar_dados(valor);
+        novo->dado = valor;
         novo->altura = 1;
         novo->esq = NULL;
         novo->dir = NULL;
@@ -55,19 +56,10 @@ arvore_avl adicionarAVL(tipo_dado *valor, arvore_avl raiz, tabela *tab) {
     }
 
     if (valor->chave > raiz->dado->chave) {
-        raiz->dir = adicionarAVL(valor, raiz->dir, tab);
+        raiz->dir = adicionarAVL(valor, raiz->dir);
     } else {
-        raiz->esq = adicionarAVL(valor, raiz->esq, tab);
+        raiz->esq = adicionarAVL(valor, raiz->esq);
     }
-
-    // Move o ponteiro de arquivo ao final
-    fseek(tab->arquivo_dados, 0L, SEEK_END);
-
-    // Atualiza o índice do novo nó
-    valor->indice = ftell(tab->arquivo_dados);
-
-    // Escreve o registro no arquivo
-    fwrite(valor, sizeof(tipo_dado), 1, tab->arquivo_dados);
 
     raiz->altura = 1 + maior(alturaAVL(raiz->dir), alturaAVL(raiz->esq));
 
@@ -167,18 +159,6 @@ void in_orderAVL(arvore_avl raiz, tabela *tab) {
     }
 }
 
-void imprimir_elementoAVL(arvore_avl raiz, tabela *tab) {
-    dado *temp = (dado *)malloc(sizeof(dado));
-    temp->matricula = 1000;
-    printf("indice: %d\n", raiz->dado->indice);
-
-    fseek(tab->arquivo_dados, raiz->dado->indice, SEEK_SET);
-    int r = fread(temp, sizeof(dado), 1, tab->arquivo_dados);
-
-    printf("[%d, %d, %s, %s, %d]\n", raiz->dado->chave, r, temp->nome, temp->curso, temp->periodo);
-    free(temp);
-}
-
 void buscarAVL(int chave, arvore_avl raiz, tabela *tab) {
     if (raiz == NULL) {
         printf("Registro com chave %d nao encontrado.\n", chave);
@@ -193,6 +173,18 @@ void buscarAVL(int chave, arvore_avl raiz, tabela *tab) {
     } else {
         buscarAVL(chave, raiz->dir, tab);
     }
+}
+
+void imprimir_elementoAVL(arvore_avl raiz, tabela *tab) {
+    dado *temp = (dado *)malloc(sizeof(dado));
+    temp->matricula = 1000;
+    printf("indice: %d\n", raiz->dado->indice);
+
+    fseek(tab->arquivo_dados, raiz->dado->indice, SEEK_SET);
+    int r = fread(temp, sizeof(dado), 1, tab->arquivo_dados);
+
+    printf("[%d, %s, %s]\n", raiz->dado->chave, temp->nome, temp->curso);
+    free(temp);
 }
 
 arvore_avl removerAVL(int valor, arvore_avl raiz) {
@@ -219,16 +211,14 @@ arvore_avl removerAVL(int valor, arvore_avl raiz) {
     return balancearAVL(raiz);
 }
 
+
 void salvar_arquivoAVL(char *nome, arvore_avl a) {
-    FILE *arq = fopen(nome, "wb");
-    if (arq == NULL) {
-        printf("Erro ao abrir o arquivo %s para escrita.\n", nome);
-        return;
+    FILE *arq;
+    arq = fopen(nome, "wb");
+    if (arq != NULL) {
+        salvar_auxiliarAVL(a, arq);
+        fclose(arq);
     }
-
-    salvar_auxiliarAVL(a, arq);
-
-    fclose(arq);  // Adiciona esta linha para fechar o arquivo corretamente
 }
 
 void salvar_auxiliarAVL(arvore_avl raiz, FILE *arq) {
@@ -239,7 +229,7 @@ void salvar_auxiliarAVL(arvore_avl raiz, FILE *arq) {
     }
 }
 
-arvore_avl carregar_arquivoAVL(char *nome, arvore_avl a, tabela *tab) {
+arvore_avl carregar_arquivoAVL(char *nome, arvore_avl a) {
     FILE *arq;
     arq = fopen(nome, "rb");
     tipo_dado *temp;
@@ -247,7 +237,7 @@ arvore_avl carregar_arquivoAVL(char *nome, arvore_avl a, tabela *tab) {
         temp = (tipo_dado *)malloc(sizeof(tipo_dado));
         while (fread(temp, sizeof(tipo_dado), 1, arq)) {
 
-            a = adicionarAVL(temp, a, tab);
+            a = adicionarAVL(temp, a);
             a = balancearAVL(a);
             temp = (tipo_dado *)malloc(sizeof(tipo_dado));
         }

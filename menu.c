@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "merged.h"  // Substituí "bst.h" por "merged.h"
+#include "geral.h"  // Substituí "bst.h" por "merged.h"
 #include <string.h>
 
 void exibirMenu(tabela *tab);
@@ -23,9 +23,9 @@ int main() {
 
         switch (opcao) {
             case 1:
-                printf("Altura da arvore BST: %d\n", altura(tab.bst_indices));
-                printf("Altura da arvore AVL: %d\n", alturaAVL(tab.avl_indices));
-                printf("Altura da arvore RB: %d\n", alturaRB(tab.rb_indices));
+                printf("Altura da árvore BST: %d\n", altura(tab.bst_indices));
+                printf("Altura da árvore AVL: %d\n", alturaAVL(tab.avl_indices));
+                printf("Altura da árvore RB: %d\n", alturaRB(tab.rb_indices));
                 break;
             case 2:
                 adicionarRegistro(&tab, ler_dados());
@@ -38,7 +38,7 @@ int main() {
                  scanf("%d", &valor);
                  tab.bst_indices = remover(valor, tab.bst_indices);
                  tab.avl_indices = removerAVL(valor, tab.avl_indices);
-                 tab.rb_indices = removerRB(valor, tab.rb_indices);
+                 tab.rb_indices = removerRB(valor, &tab.rb_indices);
                  printf("Registro removido com sucesso.\n");
                 }
                 break;
@@ -57,13 +57,13 @@ int main() {
             case 6:
                 salvar_arquivo("bst_indices.dat", tab.bst_indices);
                 salvar_arquivoAVL("avl_indices.dat", tab.avl_indices);
-                salvar_arquivoRB("rb_indices.dat", tab.rb_indices);
+                salvar_arquivoRB("dados_rb.dat", tab.rb_indices);
                 printf("Dados salvos em arquivo.\n");
                 break;
             case 7:
-                 tab.bst_indices = carregar_arquivo("bst_indices.dat", tab.bst_indices, &tab);
-                 tab.avl_indices = carregar_arquivoAVL("avl_indices.dat", tab.avl_indices, &tab);
-                 tab.rb_indices = carregar_arquivoRB("rb_indices.dat", tab.rb_indices, &tab);
+                 tab.bst_indices = carregar_arquivo("bst_indices.dat", tab.bst_indices);
+                 tab.avl_indices = carregar_arquivoAVL("avl_indices.dat", tab.avl_indices);
+                 tab.rb_indices = carregar_arquivoRB("dados_rb.dat", tab.rb_indices);
                  printf("Dados carregados do arquivo.\n");
                  break;
             case 99:
@@ -73,7 +73,6 @@ int main() {
             default:
                 printf("Opção inválida. Tente novamente.\n");
         }
-
     } while (opcao != 99);
 
     return 0;
