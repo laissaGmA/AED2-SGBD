@@ -14,7 +14,7 @@ typedef struct registro {
 
 typedef struct indice {
     int chave;
-    int indice;  // posição no arquivo do primeiro byte do registro
+    int indice;  
 } tipo_dado;
 
 // Definições para Árvore Binária de Busca (BST)

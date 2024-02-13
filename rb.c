@@ -3,7 +3,7 @@
 #include "geral.h"
 #include <string.h>
 
-// Funções da árvore RB
+
 void inicializarRB(arvore_rb *raiz) {
     *raiz = NULL;
 }
@@ -239,7 +239,7 @@ arvore_rb removerRB(int valor, arvore_rb *raiz) {
     }
 
     if (z == NULL) {
-        return *raiz;  // Adicione este retorno
+        return *raiz;  
     }
 
     cor_no y_original_cor = y->cor;
@@ -254,7 +254,7 @@ arvore_rb removerRB(int valor, arvore_rb *raiz) {
         balancearRemocaoRB(raiz, x_filho);
     }
 
-    return *raiz;  // Adicione este retorno
+    return *raiz;  
 }
 
 no_rb *sucessorRB(no_rb *x) {

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "geral.h"  // Substituí "bst.h" por "merged.h"
+#include "geral.h"  
 #include <string.h>
 
 void exibirMenu(tabela *tab);
@@ -9,7 +9,7 @@ int main() {
     tabela tab;
     int opcao;
 
-    // Inicializa a tabela
+   
     if (!inicializarTabela(&tab)) {
         printf("Erro ao inicializar a tabela.\n");
         return 1;
@@ -54,18 +54,6 @@ int main() {
                 printf("Imprimindo em ordem:\n");
                 in_order(tab.bst_indices, &tab);
                 break;
-            case 6:
-                salvar_arquivo("bst_indices.dat", tab.bst_indices);
-                salvar_arquivoAVL("avl_indices.dat", tab.avl_indices);
-                salvar_arquivoRB("dados_rb.dat", tab.rb_indices);
-                printf("Dados salvos em arquivo.\n");
-                break;
-            case 7:
-                 tab.bst_indices = carregar_arquivo("bst_indices.dat", tab.bst_indices);
-                 tab.avl_indices = carregar_arquivoAVL("avl_indices.dat", tab.avl_indices);
-                 tab.rb_indices = carregar_arquivoRB("dados_rb.dat", tab.rb_indices);
-                 printf("Dados carregados do arquivo.\n");
-                 break;
             case 99:
                 printf("Finalizando o Programa...\n");
                 finalizar(&tab);
@@ -85,7 +73,5 @@ void exibirMenu(tabela *tab) {
     printf("3. Remover registro\n");
     printf("4. Buscar\n");
     printf("5. Imprimir em ordem\n");
-    printf("6. Salvar dados em arquivo\n");
-    printf("7. Carregar dados de arquivo\n");
     printf("99. Sair\n");
 }
